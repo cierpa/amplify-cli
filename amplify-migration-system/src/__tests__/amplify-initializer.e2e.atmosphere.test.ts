@@ -296,7 +296,7 @@ describe('AmplifyInitializer + CDK Atmosphere Integration', () => {
             accessKeyId: amplifyCredentials.accessKeyId,
             secretAccessKey: amplifyCredentials.secretAccessKey,
             sessionToken: amplifyCredentials.sessionToken,
-            region: amplifyCredentials.region
+            region: amplifyCredentials.region,
           };
           testLogger.log('INFO', '✅ Using Atmosphere credentials for Amplify initialization');
         } else {
@@ -309,7 +309,15 @@ describe('AmplifyInitializer + CDK Atmosphere Integration', () => {
           usingAtmosphereCredentials: amplifyCredentials.method === 'atmosphere',
         });
 
-        await Promise.race([amplifyInitializer.initializeAppWithAllocation({ appPath: testDir, config, deploymentName: 'atmosphereAmplifyApp', allocation: allocationForInit }), timeoutPromise]);
+        await Promise.race([
+          amplifyInitializer.initializeAppWithAllocation({
+            appPath: testDir,
+            config,
+            deploymentName: 'atmosphereAmplifyApp',
+            allocation: allocationForInit,
+          }),
+          timeoutPromise,
+        ]);
 
         const duration = Date.now() - startTime;
 
@@ -410,15 +418,15 @@ describe('AmplifyInitializer + CDK Atmosphere Integration', () => {
       console.log(`❌ Testing with invalid path: ${invalidTestDir}`);
 
       // This should return a failure result due to invalid path, regardless of credentials
-      const result = await amplifyInitializer.initializeAppWithAllocation({ 
-        appPath: invalidTestDir, 
-        config, 
-        deploymentName: 'invalidPathApp', 
-        allocation: undefined 
+      const result = await amplifyInitializer.initializeAppWithAllocation({
+        appPath: invalidTestDir,
+        config,
+        deploymentName: 'invalidPathApp',
+        allocation: undefined,
       });
 
       console.log(`✅ Error handling test passed - received expected failure result: ${result.errors[0]}`);
-      
+
       // Should return a failure result
       expect(result.success).toBe(false);
       expect(result.errors).toHaveLength(1);
@@ -450,16 +458,16 @@ describe('AmplifyInitializer + CDK Atmosphere Integration', () => {
 
       try {
         // This will fail due to invalid path, but we can test that credentials are properly formatted
-        await amplifyInitializer.initializeAppWithAllocation({ 
-          appPath: '/invalid/path', 
-          config, 
-          deploymentName: 'invalidCredsApp', 
-          allocation: testCredentials 
+        await amplifyInitializer.initializeAppWithAllocation({
+          appPath: '/invalid/path',
+          config,
+          deploymentName: 'invalidCredsApp',
+          allocation: testCredentials,
         });
       } catch (error) {
         // Expected to fail due to invalid path
         console.log(`Expected error caught: ${(error as Error).message}`);
-        
+
         // The error should be about the path, not about credentials format
         expect((error as Error).message).toContain('does not exist');
       }
@@ -480,15 +488,15 @@ describe('AmplifyInitializer + CDK Atmosphere Integration', () => {
       };
 
       // Test with undefined credentials - should return failure result, not throw
-      const result = await amplifyInitializer.initializeAppWithAllocation({ 
-        appPath: testDir, 
-        config, 
-        deploymentName: 'testValidation', 
-        allocation: undefined as any
+      const result = await amplifyInitializer.initializeAppWithAllocation({
+        appPath: testDir,
+        config,
+        deploymentName: 'testValidation',
+        allocation: undefined as any,
       });
 
       console.log(`✅ Received expected failure result: ${result.errors[0]}`);
-      
+
       // Should return a failure result
       expect(result.success).toBe(false);
       expect(result.errors).toHaveLength(1);

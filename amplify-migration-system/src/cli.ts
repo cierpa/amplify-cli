@@ -14,7 +14,15 @@ import { AppSelector } from './core/app-selector';
 import { AmplifyInitializer } from './core/amplify-initializer';
 import { DirectoryManager } from './utils/directory-manager';
 import { CDKAtmosphereIntegration } from './core/cdk-atmosphere-integration';
-import { LogLevel, CLIOptions, AppConfiguration, InitializationResult, EnvironmentType, InitializeSingleAppParams, AtmosphereAllocation } from './types';
+import {
+  LogLevel,
+  CLIOptions,
+  AppConfiguration,
+  InitializationResult,
+  EnvironmentType,
+  InitializeSingleAppParams,
+  AtmosphereAllocation,
+} from './types';
 import { generateTimeBasedE2EAmplifyAppName } from './utils/math';
 
 // Initialize core components

@@ -84,7 +84,7 @@ export class CDKAtmosphereIntegration implements ICDKAtmosphereIntegration {
         throw Error(`Atmosphere credentials failed: ${(atmosphereError as Error).message}`);
       }
     } else {
-      throw Error("Must use Atmosphere for this method");
+      throw Error('Must use Atmosphere for this method');
     }
   }
 
@@ -175,7 +175,7 @@ export class CDKAtmosphereIntegration implements ICDKAtmosphereIntegration {
         accessKeyId: credentials.accessKeyId,
         secretAccessKey: credentials.secretAccessKey,
         sessionToken: credentials.sessionToken || '',
-        region: environment.region
+        region: environment.region,
       };
 
       this.logger.info(`Successfully extracted credentials from Atmosphere allocation ${allocation.id}`, context);

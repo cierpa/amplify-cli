@@ -49,7 +49,6 @@ export class EnvironmentDetector implements IEnvironmentDetector {
     return { ...this.environmentVariables };
   }
 
-
   getNodeVersion(): string {
     return process.version;
   }
