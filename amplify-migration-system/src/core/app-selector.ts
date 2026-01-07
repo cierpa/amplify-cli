@@ -27,10 +27,7 @@ export class AppSelector implements IAppSelector {
         throw new Error(`Apps directory does not exist: ${this.appsBasePath}`);
       }
 
-      const directories = await this.fileManager.listDirectories(this.appsBasePath);
-
-      // Filter for app directories (app-1, app-2, etc.)
-      const appDirectories = directories.filter((dir: string) => /^app-\d+$/.test(dir));
+      const appDirectories = await this.fileManager.listDirectories(this.appsBasePath);
 
       // Validate each app directory
       const validApps: string[] = [];
