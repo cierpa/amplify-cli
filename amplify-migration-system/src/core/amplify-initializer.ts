@@ -4,7 +4,7 @@
  */
 
 import { ILogger, IAppInitializer, InitializeAppOptions, InitializeAppWithAllocationOptions } from '../interfaces';
-import { AppConfiguration, LogContext, InitializationResult, AtmosphereAllocation } from '../types';
+import { AppConfiguration, LogContext, AtmosphereAllocation } from '../types';
 import { initJSProjectWithProfile, initProjectWithAccessKey } from '@aws-amplify/amplify-e2e-core';
 
 export interface AmplifyInitSettings {
@@ -31,22 +31,17 @@ interface BuildInitSettingsOptions {
 export class AmplifyInitializer implements IAppInitializer {
   constructor(private readonly logger: ILogger) {}
 
-  async initializeAppWithAllocation(options: InitializeAppWithAllocationOptions): Promise<InitializationResult> {
+  async initializeAppWithAllocation(options: InitializeAppWithAllocationOptions): Promise<void> {
     const { appPath, config, deploymentName, allocation } = options;
 
     if (!allocation) {
-      const context: LogContext = { appName: deploymentName, operation: 'initializeAppWithCredentials' };
-      const errorMessage = 'Credentials are required when calling initializeAppWithCredentials';
-      this.logger.error(errorMessage, new Error('Missing credentials'), context);
-      return this.createFailureResult(deploymentName, appPath, 0, [errorMessage]);
+      throw Error('An allocation is required when calling initializeAppWithAllocation.');
     }
 
-    return await this.initializeApp({ appPath, config, deploymentName, allocation });
+    await this.initializeApp({ appPath, config, deploymentName, allocation });
   }
 
-  async initializeApp(
-    options: InitializeAppOptions & { allocation?: AtmosphereAllocation; profile?: string },
-  ): Promise<InitializationResult> {
+  async initializeApp(options: InitializeAppOptions & { allocation?: AtmosphereAllocation; profile?: string }): Promise<void> {
     const { appPath, config, deploymentName, allocation, profile } = options;
 
     const context: LogContext = { appName: deploymentName, operation: 'initializeApp' };
@@ -57,10 +52,10 @@ export class AmplifyInitializer implements IAppInitializer {
     this.logger.debug(`Configuration: ${JSON.stringify(config, null, 2)}`, context);
     this.logger.debug(`Deployment name: ${deploymentName}`, context);
 
-    // Validate inputs
-    const validationResult = this.validateInitializationInputs(deploymentName, appPath, context);
-    if (!validationResult.success) {
-      return validationResult;
+    // Validate app name
+    const nameValidation = this.validateAppName(deploymentName);
+    if (!nameValidation.valid) {
+      throw Error(`Invalid app name: ${nameValidation.error}`);
     }
 
     const startTime = Date.now();
@@ -69,6 +64,7 @@ export class AmplifyInitializer implements IAppInitializer {
       if (allocation) {
         this.logger.info(`Calling initProjectWithAccessKey...`, context);
         const { accessKeyId, secretAccessKey, region } = allocation;
+        // create a profile file and use the same function as profile
         await initProjectWithAccessKey(appPath, { accessKeyId, secretAccessKey, region });
       } else {
         this.logger.info(`Calling initJSProjectWithProfile...`, context);
@@ -78,96 +74,15 @@ export class AmplifyInitializer implements IAppInitializer {
       }
 
       const duration = Date.now() - startTime;
-      this.logger.info(`Successfully initialized Amplify app with ${authMethod}: ${deploymentName} (took ${duration}ms)`, context);
-
-      // Verify initialization and return result
-      const result = this.createSuccessResult(deploymentName, appPath, duration);
-      this.verifyAndWarnAboutDirectories(appPath, result, context);
-
-      return result;
+      this.logger.info(
+        `Successfully initialized Amplify app using ${authMethod} method in ${appPath}, ${deploymentName} (took ${duration}ms)`,
+        context,
+      );
     } catch (error) {
       const duration = Date.now() - startTime;
-      const errorMessage = `Failed to initialize Amplify app with ${authMethod}: ${deploymentName} (failed after ${duration}ms)`;
-      this.logger.error(errorMessage, error as Error, context);
       this.logErrorDetails(error as Error, context);
-
-      return this.createFailureResult(deploymentName, appPath, duration, [errorMessage]);
+      throw Error(`Failed to initialize Amplify app with ${authMethod}: ${deploymentName} (failed after ${duration}ms)`);
     }
-  }
-
-  private validateInitializationInputs(deploymentName: string, appPath: string, context: LogContext): InitializationResult {
-    // Validate app name
-    const nameValidation = this.validateAppName(deploymentName);
-    if (!nameValidation.valid) {
-      const errorMessage = `Invalid app name: ${nameValidation.error}`;
-      this.logger.error(errorMessage, new Error('Invalid app name'), context);
-      return this.createFailureResult(deploymentName, appPath, 0, [errorMessage]);
-    }
-
-    // Check if the app path exists and is writable
-    try {
-      const fs = require('fs');
-      if (!fs.existsSync(appPath)) {
-        const errorMessage = `App path does not exist: ${appPath}`;
-        this.logger.error(errorMessage, new Error('Path not found'), context);
-        return this.createFailureResult(deploymentName, appPath, 0, [errorMessage]);
-      }
-
-      // Test write permissions
-      const testFile = require('path').join(appPath, '.amplify-init-test');
-      fs.writeFileSync(testFile, 'test');
-      fs.unlinkSync(testFile);
-      this.logger.debug(`App path is writable: ${appPath}`, context);
-    } catch (error) {
-      const errorMessage = `App path is not accessible or writable: ${appPath}`;
-      this.logger.error(errorMessage, error as Error, context);
-      return this.createFailureResult(deploymentName, appPath, 0, [errorMessage]);
-    }
-
-    // Return success indicator (not a real result)
-    return { success: true } as InitializationResult;
-  }
-
-  private verifyAndWarnAboutDirectories(appPath: string, result: InitializationResult, context: LogContext): void {
-    const fs = require('fs');
-    const path = require('path');
-    const amplifyDir = path.join(appPath, 'amplify');
-    const backendDir = path.join(appPath, 'amplify', 'backend');
-
-    if (fs.existsSync(amplifyDir)) {
-      this.logger.debug(`Amplify directory created: ${amplifyDir}`, context);
-      if (fs.existsSync(backendDir)) {
-        this.logger.debug(`Backend directory created: ${backendDir}`, context);
-      } else {
-        result.warnings.push(`Backend directory not found: ${backendDir}`);
-        this.logger.warn(`Backend directory not found: ${backendDir}`, context);
-      }
-    } else {
-      result.warnings.push(`Amplify directory not found: ${amplifyDir}`);
-      this.logger.warn(`Amplify directory not found: ${amplifyDir}`, context);
-    }
-  }
-
-  private createSuccessResult(appName: string, appPath: string, duration: number): InitializationResult {
-    return {
-      success: true,
-      appName,
-      appPath,
-      duration,
-      errors: [],
-      warnings: [],
-    };
-  }
-
-  private createFailureResult(appName: string, appPath: string, duration: number, errors: string[]): InitializationResult {
-    return {
-      success: false,
-      appName,
-      appPath,
-      duration,
-      errors,
-      warnings: [],
-    };
   }
 
   private logErrorDetails(error: Error, context: LogContext): void {
@@ -197,38 +112,8 @@ export class AmplifyInitializer implements IAppInitializer {
     }
   }
 
-  async verifyInitialization(appPath: string): Promise<boolean> {
-    const context: LogContext = { operation: 'verifyInitialization' };
-    this.logger.debug(`Verifying initialization for: ${appPath}`, context);
-
-    try {
-      const fs = require('fs');
-      const path = require('path');
-
-      // Check for amplify directory
-      const amplifyDir = path.join(appPath, 'amplify');
-      if (!fs.existsSync(amplifyDir)) {
-        this.logger.debug(`Amplify directory not found: ${amplifyDir}`, context);
-        return false;
-      }
-
-      // Check for backend directory
-      const backendDir = path.join(amplifyDir, 'backend');
-      if (!fs.existsSync(backendDir)) {
-        this.logger.debug(`Backend directory not found: ${backendDir}`, context);
-        return false;
-      }
-
-      this.logger.debug(`Initialization verification passed for: ${appPath}`, context);
-      return true;
-    } catch (error) {
-      this.logger.debug(`Initialization verification failed for: ${appPath}`, context);
-      return false;
-    }
-  }
-
-  private validateAppName(appName: string): { valid: boolean; error?: string } {
-    // Amplify app names must be alphanumeric only, 5-20 characters
+  validateAppName(appName: string): { valid: boolean; error?: string } {
+    // Amplify app names must be alphanumeric only, 3-20 characters
     if (!appName) {
       return { valid: false, error: 'App name is required' };
     }
@@ -253,17 +138,15 @@ export class AmplifyInitializer implements IAppInitializer {
     const { config, deploymentName, profile } = options;
     const settings = {
       name: deploymentName,
-      envName: 'dev', // Default environment name
+      envName: 'main', // Default environment name
       editor: 'Visual Studio Code',
-      framework: 'react',
+      framework: 'react', // parameterize this
       srcDir: 'src',
       distDir: 'dist',
       buildCmd: 'npm run build',
       startCmd: 'npm run start',
-      profileName: profile, // if undefined, initJSProjectWithProfile will default to the first profile, which is default
-      disableAmplifyAppCreation: config.disableAmplifyAppCreation,
-      includeGen2RecommendationPrompt: true, // Handle Gen2 recommendation prompt
-      includeUsageDataPrompt: true, // Handle usage data sharing prompt
+      profileName: profile,
+      disableAmplifyAppCreation: false, // always create app in Amplify console
     };
 
     // Log the settings being used

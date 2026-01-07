@@ -94,70 +94,42 @@ export class Logger implements ILogger {
     this.info('File logging disabled');
   }
 
-  generateReport(results: MigrationResult[]): string {
+  generateReport(result: MigrationResult): string {
     const report: string[] = [];
 
     report.push('='.repeat(80));
-    report.push('AMPLIFY MIGRATION SYSTEM - EXECUTION REPORT');
+    report.push('AMPLIFY MIGRATION E2E SYSTEM - EXECUTION REPORT');
     report.push('='.repeat(80));
     report.push('');
 
-    // Summary statistics
-    const totalApps = results.length;
-    const successfulApps = results.filter((r) => r.success).length;
-    const failedApps = totalApps - successfulApps;
-    const totalDuration = results.reduce((sum, r) => sum + r.duration, 0);
+    const totalDuration = result.duration;
 
     report.push('SUMMARY:');
-    report.push(`  Total Apps Processed: ${totalApps}`);
-    report.push(`  Successful Migrations: ${successfulApps}`);
-    report.push(`  Failed Migrations: ${failedApps}`);
     report.push(`  Total Duration: ${this.formatDuration(totalDuration)}`);
-    report.push(`  Success Rate: ${Math.round((successfulApps / totalApps) * 100)}%`);
     report.push('');
 
     // Individual app results
     report.push('DETAILED RESULTS:');
     report.push('-'.repeat(40));
 
-    results.forEach((result, index) => {
-      const status = result.success ? chalk.green('✓ SUCCESS') : chalk.red('✗ FAILED');
-      report.push(`${index + 1}. ${result.appName} - ${status}`);
-      report.push(`   Duration: ${this.formatDuration(result.duration)}`);
-      report.push(`   Categories: ${result.categoriesProcessed.join(', ') || 'None'}`);
-      report.push(`   Resources: ${result.resourcesCreated.length} created`);
+    const status = result.success ? chalk.green('✓ SUCCESS') : chalk.red('✗ FAILED');
+    report.push(`${result.appName} - ${status}`);
+    report.push(`Duration: ${this.formatDuration(result.duration)}`);
+    report.push(`Categories: ${result.categoriesProcessed.join(', ') || 'None'}`);
+    report.push(`Resources: ${result.resourcesCreated.length} created`);
 
-      if (result.warnings.length > 0) {
-        report.push(`   Warnings: ${result.warnings.length}`);
-        result.warnings.forEach((warning) => {
-          report.push(`     - ${warning}`);
-        });
-      }
+    if (result.warnings.length > 0) {
+      report.push(`Warnings: ${result.warnings.length}`);
+      result.warnings.forEach((warning) => {
+        report.push(`  - ${warning}`);
+      });
+    }
 
-      if (result.errors.length > 0) {
-        report.push(`   Errors: ${result.errors.length}`);
-        result.errors.forEach((error) => {
-          report.push(`     - ${error}`);
-        });
-      }
-
-      report.push('');
-    });
-
-    // Failed apps section
-    if (failedApps > 0) {
-      report.push('FAILED MIGRATIONS:');
-      report.push('-'.repeat(40));
-
-      results
-        .filter((r) => !r.success)
-        .forEach((result) => {
-          report.push(`${result.appName}:`);
-          result.errors.forEach((error) => {
-            report.push(`  - ${error}`);
-          });
-          report.push('');
-        });
+    if (result.errors.length > 0) {
+      report.push(`Errors: ${result.errors.length}`);
+      result.errors.forEach((error) => {
+        report.push(`  - ${error}`);
+      });
     }
 
     report.push('='.repeat(80));

@@ -9,7 +9,6 @@ import {
   AmplifyCredentials,
   ValidationResult,
   MigrationResult,
-  InitializationResult,
   LogLevel,
   LogContext,
   CLIOptions,
@@ -42,9 +41,8 @@ export interface ICDKAtmosphereIntegration {
 export interface IAppSelector {
   discoverAvailableApps(): Promise<string[]>;
   validateAppExists(appName: string): Promise<boolean>;
-  selectApps(options: CLIOptions): Promise<string[]>;
+  selectApp(options: CLIOptions): Promise<string>;
   getAppPath(appName: string): string;
-  getAppReadmePath(appName: string): string;
 }
 
 export interface InitializeAppOptions {
@@ -61,10 +59,9 @@ export interface InitializeAppWithAllocationOptions {
 }
 
 export interface IAppInitializer {
-  initializeApp(options: InitializeAppOptions): Promise<InitializationResult>;
-  initializeAppWithAllocation(options: InitializeAppWithAllocationOptions): Promise<InitializationResult>;
+  initializeApp(options: InitializeAppOptions): Promise<void>;
+  initializeAppWithAllocation(options: InitializeAppWithAllocationOptions): Promise<void>;
   createAppDirectory(basePath: string, appName: string): Promise<string>;
-  verifyInitialization(appPath: string): Promise<boolean>;
 }
 
 // Logging System
@@ -84,7 +81,7 @@ export interface ILogger {
   enableFileLogging(filePath: string): void;
   disableFileLogging(): void;
 
-  generateReport(results: MigrationResult[]): string;
+  generateReport(result: MigrationResult): string;
   exportLogs(filePath: string): Promise<void>;
 }
 

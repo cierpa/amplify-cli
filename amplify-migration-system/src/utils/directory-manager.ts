@@ -39,29 +39,17 @@ export interface DirectoryCreationResult {
 }
 
 export interface IDirectoryManager {
-  createAppDirectory(options: DirectoryCreationOptions): Promise<DirectoryCreationResult>;
-  ensureUniqueDirectory(basePath: string, preferredName: string): Promise<string>;
-  cleanupDirectory(directoryPath: string): Promise<void>;
-  verifyDirectoryStructure(directoryPath: string): Promise<boolean>;
+  createAppDirectory(options: DirectoryCreationOptions): Promise<string>;
   copyDirectory(source: string, destination: string): Promise<void>;
 }
 
 export class DirectoryManager implements IDirectoryManager {
   constructor(private readonly logger: ILogger) {}
 
-  async createAppDirectory(options: DirectoryCreationOptions): Promise<DirectoryCreationResult> {
+  async createAppDirectory(options: DirectoryCreationOptions): Promise<string> {
     const context: LogContext = {
       appName: options.appName,
       operation: 'createAppDirectory',
-    };
-
-    const result: DirectoryCreationResult = {
-      success: false,
-      directoryPath: '',
-      existingCleaned: false,
-      uniqueNameGenerated: false,
-      errors: [],
-      warnings: [],
     };
 
     try {
@@ -85,22 +73,7 @@ export class DirectoryManager implements IDirectoryManager {
       // Check if directory already exists
       const exists = await fs.pathExists(targetPath);
       if (exists) {
-        this.logger.debug(`Directory already exists: ${targetPath}`, context);
-
-        if (options.cleanExisting) {
-          this.logger.info(`Cleaning existing directory: ${targetPath}`, context);
-          await this.cleanupDirectory(targetPath);
-          result.existingCleaned = true;
-        } else if (options.ensureUnique) {
-          this.logger.info(`Generating unique directory name for: ${options.appName}`, context);
-          const uniqueAppName = await this.ensureUniqueDirectory(options.basePath, options.appName);
-          targetPath = path.join(options.basePath, uniqueAppName);
-          result.uniqueNameGenerated = true;
-          result.originalName = options.appName;
-          this.logger.info(`Generated unique name: ${uniqueAppName}`, context);
-        } else {
-          throw new Error(`Directory already exists and no conflict resolution specified: ${targetPath}`);
-        }
+        throw new Error(`Directory already exists: ${targetPath}`);
       }
 
       // Create the directory
@@ -113,22 +86,11 @@ export class DirectoryManager implements IDirectoryManager {
         this.logger.debug(`Set permissions ${options.permissions} on: ${targetPath}`, context);
       }
 
-      // Verify the directory was created successfully
-      const verificationResult = await this.verifyDirectoryStructure(targetPath);
-      if (!verificationResult) {
-        throw new Error(`Directory verification failed: ${targetPath}`);
-      }
-
-      result.success = true;
-      result.directoryPath = targetPath;
-
       this.logger.info(`Successfully created app directory: ${targetPath}`, context);
-      return result;
+
+      return targetPath;
     } catch (error) {
-      const errorMessage = `Failed to create app directory: ${(error as Error).message}`;
-      result.errors.push(errorMessage);
-      this.logger.error(errorMessage, error as Error, context);
-      return result;
+      throw Error(`Failed to create app directory: ${(error as Error).message}`);
     }
   }
 
@@ -191,51 +153,6 @@ export class DirectoryManager implements IDirectoryManager {
     }
   }
 
-  async verifyDirectoryStructure(directoryPath: string): Promise<boolean> {
-    const context: LogContext = { operation: 'verifyDirectoryStructure' };
-
-    try {
-      this.logger.debug(`Verifying directory structure: ${directoryPath}`, context);
-
-      // Check if path exists
-      if (!(await fs.pathExists(directoryPath))) {
-        this.logger.debug(`Directory does not exist: ${directoryPath}`, context);
-        return false;
-      }
-
-      // Check if it's actually a directory
-      const stat = await fs.stat(directoryPath);
-      if (!stat.isDirectory()) {
-        this.logger.debug(`Path is not a directory: ${directoryPath}`, context);
-        return false;
-      }
-
-      // Check if directory is readable and writable
-      try {
-        await fs.access(directoryPath, fs.constants.R_OK | fs.constants.W_OK);
-      } catch (accessError) {
-        this.logger.debug(`Directory is not readable/writable: ${directoryPath}`, context);
-        return false;
-      }
-
-      // Test write permissions by creating and deleting a test file
-      const testFilePath = path.join(directoryPath, '.directory-manager-test');
-      try {
-        await fs.writeFile(testFilePath, 'test');
-        await fs.unlink(testFilePath);
-      } catch (writeError) {
-        this.logger.debug(`Cannot write to directory: ${directoryPath}`, context);
-        return false;
-      }
-
-      this.logger.debug(`Directory structure verification passed: ${directoryPath}`, context);
-      return true;
-    } catch (error) {
-      this.logger.debug(`Directory structure verification failed: ${directoryPath}`, context);
-      return false;
-    }
-  }
-
   async copyDirectory(source: string, destination: string): Promise<void> {
     const context: LogContext = { operation: 'copyDirectory' };
 
@@ -262,12 +179,6 @@ export class DirectoryManager implements IDirectoryManager {
         errorOnExist: true, // Throw error if destination exists
         preserveTimestamps: true, // Preserve file timestamps
       });
-
-      // Verify the copy was successful
-      const verificationResult = await this.verifyDirectoryStructure(destination);
-      if (!verificationResult) {
-        throw new Error(`Directory copy verification failed: ${destination}`);
-      }
 
       this.logger.info(`Successfully copied directory: ${source} -> ${destination}`, context);
     } catch (error) {

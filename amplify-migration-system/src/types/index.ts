@@ -152,7 +152,7 @@ export enum AuthMethod {
 export interface AtmosphereAllocation {
   accessKeyId: string;
   secretAccessKey: string;
-  sessionToken?: string;
+  sessionToken: string;
   region: string;
 }
 
@@ -174,16 +174,6 @@ export interface MigrationResult {
   warnings: string[];
   categoriesProcessed: string[];
   resourcesCreated: string[];
-}
-
-export interface InitializationResult {
-  success: boolean;
-  appName: string;
-  appPath: string;
-  duration: number;
-  amplifyVersion?: string;
-  errors: string[];
-  warnings: string[];
 }
 
 export interface ValidationResult {
@@ -224,12 +214,10 @@ export interface LogContext {
 
 // CLI types
 export interface CLIOptions {
-  apps?: string[];
+  app: string;
   dryRun?: boolean;
-  cleanup?: boolean;
   verbose?: boolean;
-  profile?: string;
-  createAmplifyApp?: boolean;
+  profile: string;
 }
 
 export interface InitializeSingleAppParams {

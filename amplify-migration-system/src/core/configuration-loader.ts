@@ -21,32 +21,31 @@ export class ConfigurationLoader implements IConfigurationLoader {
 
     const configPath = this.getConfigPath(appName);
 
+    if (!(await fs.pathExists(configPath))) {
+      throw new Error(`Configuration file not found: ${configPath}. Please create a migration-config.json file for ${appName}.`);
+    }
+
     try {
-      if (await fs.pathExists(configPath)) {
-        const configContent = await this.fileManager.readFile(configPath);
-        const rawConfig = JSON.parse(configContent) as Partial<AppConfiguration>;
+      const configContent = await this.fileManager.readFile(configPath);
+      const rawConfig = JSON.parse(configContent) as Partial<AppConfiguration>;
 
-        // Set disableAmplifyAppCreation to false (always create Amplify apps in the cloud)
-        const config: AppConfiguration = {
-          ...rawConfig,
-          app: rawConfig.app!,
-          categories: rawConfig.categories!,
-          disableAmplifyAppCreation: false,
-        };
+      // Set disableAmplifyAppCreation to false (always create Amplify apps in the cloud)
+      const config: AppConfiguration = {
+        ...rawConfig,
+        app: rawConfig.app!,
+        categories: rawConfig.categories!,
+        disableAmplifyAppCreation: false,
+      };
 
-        const validation = this.validateConfiguration(config);
-        if (!validation.valid) {
-          this.logger.warn(`Configuration validation failed for ${appName}`, { appName });
-          validation.errors.forEach((error) => this.logger.error(error, undefined, { appName }));
-        }
-
-        this.logger.info(`Successfully loaded configuration for ${appName}`, { appName });
-        return config;
-      } else {
-        throw new Error(`Configuration file not found: ${configPath}. Please create a migration-config.json file for ${appName}.`);
+      const validation = this.validateConfiguration(config);
+      if (!validation.valid) {
+        this.logger.warn(`Configuration validation failed for ${appName}`, { appName });
+        validation.errors.forEach((error) => this.logger.error(error, undefined, { appName }));
       }
+
+      this.logger.info(`Successfully loaded configuration for ${appName}`, { appName });
+      return config;
     } catch (error) {
-      this.logger.error(`Failed to load configuration for ${appName}`, error as Error, { appName });
       throw new Error(`Failed to load configuration for ${appName}: ${(error as Error).message}`);
     }
   }
