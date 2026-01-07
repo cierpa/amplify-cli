@@ -186,15 +186,6 @@ export interface InitializationResult {
   warnings: string[];
 }
 
-export interface ProcessStep {
-  name: string;
-  status: 'pending' | 'running' | 'completed' | 'failed';
-  startTime?: Date;
-  endTime?: Date;
-  error?: string;
-  details?: Record<string, unknown>;
-}
-
 export interface ValidationResult {
   valid: boolean;
   errors: string[];
@@ -234,13 +225,10 @@ export interface LogContext {
 // CLI types
 export interface CLIOptions {
   apps?: string[];
-  parallel?: boolean;
   dryRun?: boolean;
   cleanup?: boolean;
   verbose?: boolean;
-  config?: string;
   profile?: string;
-  region?: string;
   createAmplifyApp?: boolean;
 }
 

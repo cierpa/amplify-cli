@@ -22,6 +22,12 @@ export interface AmplifyInitSettings {
   includeUsageDataPrompt?: boolean;
 }
 
+interface BuildInitSettingsOptions {
+  config: AppConfiguration;
+  deploymentName: string;
+  profile?: string;
+}
+
 export class AmplifyInitializer implements IAppInitializer {
   constructor(private readonly logger: ILogger) {}
 
@@ -38,8 +44,10 @@ export class AmplifyInitializer implements IAppInitializer {
     return await this.initializeApp({ appPath, config, deploymentName, allocation });
   }
 
-  async initializeApp(options: InitializeAppOptions & { allocation?: AtmosphereAllocation }): Promise<InitializationResult> {
-    const { appPath, config, deploymentName, allocation } = options;
+  async initializeApp(
+    options: InitializeAppOptions & { allocation?: AtmosphereAllocation; profile?: string },
+  ): Promise<InitializationResult> {
+    const { appPath, config, deploymentName, allocation, profile } = options;
 
     const context: LogContext = { appName: deploymentName, operation: 'initializeApp' };
     const authMethod = allocation ? 'atmosphere' : 'profile';
@@ -64,7 +72,7 @@ export class AmplifyInitializer implements IAppInitializer {
         await initProjectWithAccessKey(appPath, { accessKeyId, secretAccessKey, region });
       } else {
         this.logger.info(`Calling initJSProjectWithProfile...`, context);
-        const settings = this.buildInitSettings(config, deploymentName);
+        const settings = this.buildInitSettings({ config, deploymentName, profile });
         this.logger.debug(`Init settings: ${JSON.stringify(settings, null, 2)}`, context);
         await initJSProjectWithProfile(appPath, settings);
       }
@@ -241,7 +249,8 @@ export class AmplifyInitializer implements IAppInitializer {
     return { valid: true };
   }
 
-  private buildInitSettings(config: AppConfiguration, deploymentName: string): Partial<AmplifyInitSettings> {
+  private buildInitSettings(options: BuildInitSettingsOptions): Partial<AmplifyInitSettings> {
+    const { config, deploymentName, profile } = options;
     const settings = {
       name: deploymentName,
       envName: 'dev', // Default environment name
@@ -251,7 +260,7 @@ export class AmplifyInitializer implements IAppInitializer {
       distDir: 'dist',
       buildCmd: 'npm run build',
       startCmd: 'npm run start',
-      profileName: 'default', // Use default AWS profile
+      profileName: profile, // if undefined, initJSProjectWithProfile will default to the first profile, which is default
       disableAmplifyAppCreation: config.disableAmplifyAppCreation,
       includeGen2RecommendationPrompt: true, // Handle Gen2 recommendation prompt
       includeUsageDataPrompt: true, // Handle usage data sharing prompt

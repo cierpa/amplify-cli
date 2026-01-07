@@ -14,6 +14,8 @@ import { execSync } from 'child_process';
 import { generateTimeBasedE2EAmplifyAppName } from '../utils/math';
 import { EnvironmentDetector } from '../core/environment-detector';
 
+const TEST_RUNNER_PROFILE = 'default'; // this is the profile that will be read from your local system to deploy the Amplify App
+
 /**
  * Helper function to extract the Amplify App ID from the local project files
  */
@@ -190,8 +192,10 @@ describe('AmplifyInitializer E2E', () => {
       const invalidTestDir = '/invalid/path/that/does/not/exist';
       console.log(`❌ Testing with invalid path: ${invalidTestDir}`);
 
+      const profile = TEST_RUNNER_PROFILE;
+
       const startTime = Date.now();
-      const result = await amplifyInitializer.initializeApp({ appPath: invalidTestDir, config, deploymentName: 'invalidPathApp' });
+      const result = await amplifyInitializer.initializeApp({ appPath: invalidTestDir, config, deploymentName: 'invalidPathApp', profile });
       const duration = Date.now() - startTime;
 
       // The method returns InitializationResult with success: false instead of throwing
@@ -228,6 +232,8 @@ describe('AmplifyInitializer E2E', () => {
 
       // Generate a unique alphanumeric app name (3-20 chars, alphanumeric only)
       const appName = generateTimeBasedE2EAmplifyAppName();
+      const profile = TEST_RUNNER_PROFILE;
+
       const config = {
         app: {
           name: appName,
@@ -260,7 +266,7 @@ describe('AmplifyInitializer E2E', () => {
       try {
         // Race the amplify init against our timeout
         const result = (await Promise.race([
-          amplifyInitializer.initializeApp({ appPath: testDir, config, deploymentName: appName }),
+          amplifyInitializer.initializeApp({ appPath: testDir, config, deploymentName: appName, profile }),
           timeoutPromise,
         ])) as import('../types').InitializationResult;
 
@@ -354,52 +360,5 @@ describe('AmplifyInitializer E2E', () => {
         }
       }
     }, 180000); // 3 minute Jest timeout (includes 20 second cleanup delay)
-  });
-
-  describe('buildInitSettings', () => {
-    it('should build correct settings for different app configurations', () => {
-      console.log('🔧 Testing buildInitSettings method...');
-
-      const config = {
-        app: {
-          name: 'customappname',
-          description: 'Custom application',
-        },
-        categories: {
-          api: {
-            type: 'GraphQL' as const,
-            authModes: ['COGNITO_USER_POOLS' as const],
-          },
-          auth: {
-            signInMethods: ['email' as const],
-            socialProviders: [],
-          },
-        },
-        disableAmplifyAppCreation: true,
-      };
-
-      console.log(`📋 Input configuration:`, JSON.stringify(config, null, 2));
-
-      const deploymentName = 'customAppDeployName';
-
-      console.log(`📝 Deployment name: ${deploymentName}`);
-
-      const settings = (amplifyInitializer as any).buildInitSettings(config, deploymentName);
-
-      console.log(`⚙️  Generated settings:`, JSON.stringify(settings, null, 2));
-
-      expect(settings.name).toBe(deploymentName);
-      expect(settings.envName).toBe('dev');
-      expect(settings.framework).toBe('react');
-      expect(settings.editor).toBe('Visual Studio Code');
-      expect(settings.srcDir).toBe('src');
-      expect(settings.distDir).toBe('dist');
-      expect(settings.buildCmd).toBe('npm run build');
-      expect(settings.startCmd).toBe('npm run start');
-      expect(settings.profileName).toBe('default');
-      expect(settings.disableAmplifyAppCreation).toBe(true);
-
-      console.log('✅ All settings validation checks passed');
-    });
   });
 });

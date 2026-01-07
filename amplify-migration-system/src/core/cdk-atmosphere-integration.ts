@@ -52,7 +52,7 @@ export class CDKAtmosphereIntegration implements ICDKAtmosphereIntegration {
     this.logger.debug(`Initialized Atmosphere client with endpoint: ${atmosphereEndpoint}`, context);
 
     // Get allocation from Atmosphere
-    const allocation = await this.getAtmosphereCredentials();
+    const allocation = await this.getAtmosphereAllocation();
 
     this.cachedAllocation = allocation;
     this.isInitialized = true;
@@ -119,7 +119,7 @@ export class CDKAtmosphereIntegration implements ICDKAtmosphereIntegration {
     }
   }
 
-  private async getAtmosphereCredentials(): Promise<AtmosphereAllocation> {
+  private async getAtmosphereAllocation(): Promise<AtmosphereAllocation> {
     const context: LogContext = { operation: 'getAtmosphereCredentials' };
 
     try {

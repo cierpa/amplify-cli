@@ -49,12 +49,6 @@ async function main(): Promise<void> {
         description: 'Specific apps to migrate (e.g., app-1 app-2)',
         string: true,
       })
-      .option('parallel', {
-        alias: 'p',
-        type: 'boolean',
-        description: 'Process apps in parallel',
-        default: false,
-      })
       .option('dry-run', {
         alias: 'd',
         type: 'boolean',
@@ -72,10 +66,6 @@ async function main(): Promise<void> {
         type: 'boolean',
         description: 'Enable verbose logging',
         default: false,
-      })
-      .option('config', {
-        type: 'string',
-        description: 'Path to custom configuration file',
       })
       .option('profile', {
         type: 'string',
@@ -138,13 +128,10 @@ async function main(): Promise<void> {
     // Build CLI options
     const options: CLIOptions = {
       apps: argv.apps as string[],
-      parallel: argv.parallel,
       dryRun: argv['dry-run'],
       cleanup: argv.cleanup,
       verbose: argv.verbose,
-      config: argv.config,
       profile: argv.profile,
-      region: argv.region,
       createAmplifyApp: argv['create-amplify-app'] as boolean,
     };
 
@@ -330,7 +317,6 @@ async function showDryRunSummary(
   console.log(chalk.yellow('\n=== DRY RUN SUMMARY ===\n'));
 
   console.log(`Apps to process: ${selectedApps.length}`);
-  console.log(`Processing mode: ${options.parallel ? 'Parallel' : 'Sequential'}`);
   console.log(`Cleanup after migration: ${options.cleanup ? 'Yes' : 'No'}`);
   console.log('');
 
@@ -441,7 +427,7 @@ async function initializeAppsSequentially(
  * Copies the source directory to the migration target and runs amplify init
  */
 async function initializeSingleApp(params: InitializeSingleAppParams): Promise<InitializationResult> {
-  const { appName, config, migrationTargetPath, atmosphereAllocation } = params;
+  const { appName, config, migrationTargetPath, atmosphereAllocation, options: cliOptions } = params;
   const startTime = Date.now();
   const context = { appName, operation: 'initializeSingleApp' };
 
@@ -508,6 +494,7 @@ async function initializeSingleApp(params: InitializeSingleAppParams): Promise<I
         appPath: dirResult.directoryPath,
         config,
         deploymentName,
+        profile: cliOptions.profile,
       });
     }
 

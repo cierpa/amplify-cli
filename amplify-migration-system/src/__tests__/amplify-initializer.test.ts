@@ -25,47 +25,52 @@ describe('AmplifyInitializer', () => {
   });
 
   describe('buildInitSettings', () => {
-    it('should build correct init settings from app configuration', () => {
-      console.log('🔧 Testing buildInitSettings...');
+    it('should build correct settings for different app configurations', () => {
+      console.log('🔧 Testing buildInitSettings method...');
 
       const config = {
         app: {
-          name: 'testapp',
-          description: 'Test application',
+          name: 'customappname',
+          description: 'Custom application',
         },
         categories: {
           api: {
             type: 'GraphQL' as const,
-            authModes: ['API_KEY' as const],
+            authModes: ['COGNITO_USER_POOLS' as const],
+          },
+          auth: {
+            signInMethods: ['email' as const],
+            socialProviders: [],
           },
         },
         disableAmplifyAppCreation: true,
       };
 
-      console.log('📋 Input config:', JSON.stringify(config, null, 2));
+      console.log(`📋 Input configuration:`, JSON.stringify(config, null, 2));
 
-      // Access the private method through type assertion for testing
-      const deploymentName = 'deployedapp';
-      const settings = (amplifyInitializer as any).buildInitSettings(config, deploymentName);
+      const deploymentName = 'customAppDeployName';
 
-      console.log('⚙️  Generated settings:', JSON.stringify(settings, null, 2));
+      console.log(`📝 Deployment name: ${deploymentName}`);
 
-      expect(settings).toEqual({
-        name: 'deployedapp',
-        envName: 'dev',
-        editor: 'Visual Studio Code',
-        framework: 'react',
-        srcDir: 'src',
-        distDir: 'dist',
-        buildCmd: 'npm run build',
-        startCmd: 'npm run start',
-        profileName: 'default',
-        disableAmplifyAppCreation: true,
-        includeGen2RecommendationPrompt: true,
-        includeUsageDataPrompt: true,
-      });
+      const profile = 'test-profile';
+      console.log(`📝 Profile: ${profile}`);
 
-      console.log('✅ buildInitSettings test passed');
+      const settings = (amplifyInitializer as any).buildInitSettings({ config, deploymentName, profile });
+
+      console.log(`⚙️  Generated settings:`, JSON.stringify(settings, null, 2));
+
+      expect(settings.name).toBe(deploymentName);
+      expect(settings.envName).toBe('dev');
+      expect(settings.framework).toBe('react');
+      expect(settings.editor).toBe('Visual Studio Code');
+      expect(settings.srcDir).toBe('src');
+      expect(settings.distDir).toBe('dist');
+      expect(settings.buildCmd).toBe('npm run build');
+      expect(settings.startCmd).toBe('npm run start');
+      expect(settings.profileName).toBe('test-profile');
+      expect(settings.disableAmplifyAppCreation).toBe(true);
+
+      console.log('✅ All settings validation checks passed');
     });
   });
 
@@ -96,8 +101,14 @@ describe('AmplifyInitializer', () => {
       jest.spyOn(fs, 'unlinkSync').mockImplementation(() => {});
 
       const deploymentName = 'mytestapp';
+      const profile = 'test-profile';
       const startTime = Date.now();
-      const result = await amplifyInitializer.initializeApp({ appPath, config, deploymentName });
+      const result = await amplifyInitializer.initializeApp({
+        appPath,
+        config,
+        deploymentName,
+        profile,
+      });
       const duration = Date.now() - startTime;
 
       console.log(`⏰ Test completed in ${duration}ms`);
@@ -118,7 +129,7 @@ describe('AmplifyInitializer', () => {
         distDir: 'dist',
         buildCmd: 'npm run build',
         startCmd: 'npm run start',
-        profileName: 'default',
+        profileName: 'test-profile',
         disableAmplifyAppCreation: true,
         includeGen2RecommendationPrompt: true,
         includeUsageDataPrompt: true,

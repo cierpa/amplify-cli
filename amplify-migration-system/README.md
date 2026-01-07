@@ -5,14 +5,14 @@ Comprehensive automation system for migrating AWS Amplify Gen1 applications to G
 ## Features
 
 ### In-progress
-- **Multi-App Support**: Migrate multiple apps (app-1 through app-4) with unique configurations
+- **Multi-App Support**: Migrate multiple apps (app-2 through app-4) with unique configurations
 - **Category Support**: Full support for API, Auth, Storage, Function, and Hosting categories
-- **Supervisor Model**: Sequential or parallel processing of multiple apps
+- **Supervisor Model**: Processing of multiple apps
 - **Comprehensive Logging**: Detailed logging with progress tracking and report generation
 ### Complete
 - **Environment Detection**: Automatic detection of Atmosphere vs Local environments
-- **Flexible Authentication**: Support for AWS profiles, access keys, and Atmosphere credentials
-- **Configuration-Driven**: JSON-based configuration for each app with comprehensive API documentation
+- **Flexible Authentication**: Support for AWS profiles and Atmosphere credentials
+- **Configuration-Driven**: JSON-based configuration for each app with API documentation
 
 ## Installation
 
@@ -31,10 +31,7 @@ npm run build
 npm run dev
 
 # Migrate specific apps
-npm run dev -- --apps app-1
-
-# Parallel processing
-npm run dev -- --parallel
+npm run dev -- --apps app-2
 
 # Dry run (show what would be done)
 npm run dev -- --dry-run
@@ -47,13 +44,11 @@ npm run dev -- --dry-run
 
 ### CLI Options
 
-- `--apps, -a`: Specific apps to migrate (e.g., app-1 app-2)
-- `--parallel, -p`: Process apps in parallel
+- `--apps, -a`: Specific apps to migrate (e.g., app-2 app-3)
 - `--dry-run, -d`: Show what would be done without executing
 - `--cleanup, -c`: Clean up resources after migration
 - `--verbose, -v`: Enable verbose logging
-- `--profile`: AWS profile to use
-- `--region`: AWS region to use
+- `--profile`: AWS profile to use (optional, defaults to `default`)
 - `--list-apps, -l`: List available apps and exit
 - `--validate-apps`: Validate all apps and exit
 
@@ -67,7 +62,7 @@ npm run dev -- --list-apps
 npm run dev -- --validate-apps
 
 # Migrate specific apps with verbose logging
-npm run dev -- --apps app-1 app-2 --verbose
+npm run dev -- --apps app-2 app-3 --verbose
 
 # Dry run with cleanup
 npm run dev -- --dry-run --cleanup
@@ -140,6 +135,11 @@ The system follows a modular architecture with:
 
 ## Development
 
+### Installing
+```bash
+npm install
+```
+
 ### Building
 
 ```bash
@@ -149,9 +149,8 @@ npm run build
 ### Testing
 
 ```bash
-npm test
-npm run test:watch
-npm run test:coverage
+npm run test # integration tests
+npm run test:e2e # end-to-end tests (deploys Amplify Apps)
 ```
 
 ### Linting
@@ -168,16 +167,16 @@ npm run lint:fix
 The system automatically detects the environment type based on the presence of specific environment variables from `.gamma.env`:
 
 **Atmosphere Environment Detection:**
-- Only if ALL three variables are present: `ATMOSPHERE_ENDPOINT`, and `DEFAULT_POOL`
+- Only if BOTH variables are present: `ATMOSPHERE_ENDPOINT`, and `DEFAULT_POOL`
 - Environment type: `atmosphere`
 - Uses CDK Atmosphere client for integration tests
 
 **Local Environment Detection:**
-- If ANY of the three variables are missing or not set, defaults to `local`
+- If ANY of the two atmosphere variables are missing or not set, defaults to `local`
 - Environment type: `local`
-- Uses standard AWS credential chain (profiles, access keys, IAM roles) in environment
+- Uses AWS profiles in environment from AWS config and credentials files
 
-### Configuration File: `.gamma.env`
+### Atmosphere Configuration File: `.gamma.env`
 
 Create a `.gamma.env` file in the project root to configure Atmosphere environment:
 
@@ -190,20 +189,19 @@ DEFAULT_POOL=__exp.my-amplify-cli-pool__
 
 **Important Notes:**
 - `.gamma.env` is git-ignored
-- Tests automatically load this file if present
-- All three variables must be present for Atmosphere environment detection
+- Tests automatically load this file if present, but manual runs require you to set the env vars yourself
+- Both variables must be present for Atmosphere environment detection
 - Missing or incomplete configuration defaults to Local environment
 
 ## Environment Support
 
 ### Local Environment
-- Uses AWS profiles or access keys
-- Standard AWS SDK credential chain
+- Uses AWS profiles
 - CDK Atmosphere client optional
 - No `.gamma.env` file required
 
 ### Atmosphere Environment
-- Requires complete `.gamma.env` configuration
+- Requires `.gamma.env` configuration
 - Automatic credential detection through CDK Atmosphere client
 - Managed credential lifecycle with automatic cleanup
 - Pool-based resource allocation
@@ -217,10 +215,9 @@ Logs are written to both console and file:
 
 ## Error Handling
 
-Comprehensive error handling with:
+Error handling with:
 - Environment-specific error messages
 - Graceful degradation for optional features
-- Detailed error reporting and troubleshooting guidance
 
 ## License
 
