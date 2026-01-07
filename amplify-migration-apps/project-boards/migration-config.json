@@ -1,7 +1,7 @@
 {
   "app": {
     "name": "project-boards",
-    "description": "Project board app with authentication and file storage",
+    "description": "Project board app with authentication and file storage"
   },
   "categories": {
     "api": {
