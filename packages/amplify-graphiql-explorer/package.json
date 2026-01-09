@@ -81,7 +81,7 @@
   "license": "Apache-2.0",
   "scripts": {
     "start": "cross-env SKIP_PREFLIGHT_CHECK=true node scripts/start.js",
-    "build": ""
+    "build": "echo 'Skipping build for amplify-graphiql-explorer'"
   },
   "eslintConfig": {
     "extends": [
