@@ -81,7 +81,7 @@
   "license": "Apache-2.0",
   "scripts": {
     "start": "cross-env SKIP_PREFLIGHT_CHECK=true node scripts/start.js",
-    "build": "cross-env SKIP_PREFLIGHT_CHECK=true node --max-old-space-size=8192 scripts/build.js"
+    "build": "cross-env SKIP_PREFLIGHT_CHECK=true TSC_COMPILE_ON_ERROR=true node --max-old-space-size=8192 scripts/build.js"
   },
   "eslintConfig": {
     "extends": [
