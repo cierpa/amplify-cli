@@ -35,18 +35,13 @@ export const getPreviousDeploymentRecord = async (cfnClient: CloudFormation, sta
 
 export const getTableNames = async (cfnClient: CloudFormation, tables: string[], StackId: string): Promise<Map<string, string>> => {
   const tableNameMap: Map<string, string> = new Map();
-  // const apiResources = await cfnClient
-  //   .describeStackResources({
-  //     StackName: StackId,
-  //   })
-  //   .promise();
   const apiResources = await pagedAWSCall(
     async (params, NextToken: string) => cfnClient.listStackResources({ ...params, NextToken }).promise(),
     { StackName: StackId },
     ({ StackResourceSummaries }) => StackResourceSummaries,
     async ({ NextToken }) => NextToken,
-  );  
-  for (const resource of apiResources.StackResources) {
+  );
+  for (const resource of apiResources) {
     if (tables.includes(resource.LogicalResourceId)) {
       const tableStack = await cfnClient
         .describeStacks({
