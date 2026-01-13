@@ -4,6 +4,7 @@ import { CloudFormation } from 'aws-sdk';
 import { Capabilities } from 'aws-sdk/clients/cloudformation';
 import _ from 'lodash';
 import { JSONUtilities } from '@aws-amplify/amplify-cli-core';
+import { pagedAWSCall } from '../aws-utils/paged-call';
 
 export interface GSIRecord {
   attributeDefinition: AttributeDefinition[];
@@ -34,11 +35,17 @@ export const getPreviousDeploymentRecord = async (cfnClient: CloudFormation, sta
 
 export const getTableNames = async (cfnClient: CloudFormation, tables: string[], StackId: string): Promise<Map<string, string>> => {
   const tableNameMap: Map<string, string> = new Map();
-  const apiResources = await cfnClient
-    .describeStackResources({
-      StackName: StackId,
-    })
-    .promise();
+  // const apiResources = await cfnClient
+  //   .describeStackResources({
+  //     StackName: StackId,
+  //   })
+  //   .promise();
+  const apiResources = await pagedAWSCall(
+    async (params, NextToken: string) => cfnClient.listStackResources({ ...params, NextToken }).promise(),
+    { StackName: StackId },
+    ({ StackResourceSummaries }) => StackResourceSummaries,
+    async ({ NextToken }) => NextToken,
+  );  
   for (const resource of apiResources.StackResources) {
     if (tables.includes(resource.LogicalResourceId)) {
       const tableStack = await cfnClient
