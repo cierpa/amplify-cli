@@ -1,0 +1,67 @@
+version: 2
+updates:
+  - package-ecosystem: "bundler"
+    directory: "/packages/amplify-e2e-tests/resources/example-ios-app"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: Asia/Tokyo
+    open-pull-requests-limit: 5
+  - package-ecosystem: "docker"
+    directories:
+      - "/packages/amplify-container-hosting/resources/express-template"
+      - "/packages/amplify-container-hosting/resources/simple-template"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: Asia/Tokyo
+    open-pull-requests-limit: 5
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: Asia/Tokyo
+    open-pull-requests-limit: 5
+  - package-ecosystem: "gomod"
+    directories:
+      - "/packages/amplify-go-function-runtime-provider/resources/localinvoke"
+      - "/packages/amplify-go-function-template-provider/resources/hello-world"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: Asia/Tokyo
+    open-pull-requests-limit: 5
+  - package-ecosystem: "npm"
+    directories:
+      - "/"
+      - "/packages/amplify-cli-core/src/__tests__/testFiles/packageManager-npm"
+      - "/packages/amplify-cli-core/src/__tests__/testFiles/packageManager-yarn"
+      - "/packages/amplify-cli-core/src/__tests__/testFiles/packageManager-yarn2"
+      - "/scripts"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: Asia/Tokyo
+    open-pull-requests-limit: 5
+    groups:
+      npm-minor-and-patch:
+        update-types:
+          - minor
+          - patch
+  - package-ecosystem: "pip"
+    directories:
+      - "/packages/amplify-python-function-runtime-provider/resources"
+      - "/packages/amplify-python-function-template-provider/resources/hello-world"
+      - "/packages/amplify-util-mock/resources/mock-searchable-lambda-trigger"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: Asia/Tokyo
+    open-pull-requests-limit: 5
